@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Formix Receipt Generator</title>
+<style>
+:root{--purple:#6d28d9;--dark:#4c1d95;--light:#f5f3ff;--off:#faf9f6;--paper:#fffdf8;--text:#241f2f;--muted:#777180;--border:#e7e1ed}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--off);color:var(--text)}
+button,input,select,textarea{font:inherit}button{cursor:pointer}
+.topbar{height:72px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 32px;position:sticky;top:0;z-index:5}
+.brand{display:flex;align-items:center;gap:12px}.mark,.logo{background:var(--purple);color:#fff;display:grid;place-items:center;font-weight:900}
+.mark{width:38px;height:38px;border-radius:11px}.brand-name{font-size:20px;font-weight:800}.sub{font-size:12px;color:var(--muted)}
+.actions{display:flex;gap:10px}.btn{border:1px solid var(--border);background:#fff;padding:10px 16px;border-radius:10px;font-weight:700}.primary{background:var(--purple);color:#fff;border-color:var(--purple)}
+.page{max-width:1500px;margin:auto;padding:30px}.title h1{margin:0;font-size:30px}.title p{margin:7px 0 25px;color:var(--muted)}
+.workspace{display:grid;grid-template-columns:minmax(400px,.9fr) minmax(500px,1.1fr);gap:28px;align-items:start}
+.panel{background:#fff;border:1px solid var(--border);border-radius:18px;padding:24px;box-shadow:0 20px 60px rgba(76,29,149,.08)}
+.section{padding:20px 0;border-top:1px solid var(--border)}.section:first-child{border-top:0;padding-top:0}
+.section h3{font-size:13px;color:var(--dark);margin:0 0 14px;text-transform:uppercase;letter-spacing:.08em}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.field{display:flex;flex-direction:column;gap:7px}.full{grid-column:1/-1}
+label{font-size:12px;font-weight:700;color:#5f5966}
+input,select,textarea{width:100%;border:1px solid var(--border);background:var(--off);border-radius:9px;padding:11px 12px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--purple);box-shadow:0 0 0 3px #ede9fe;background:#fff}textarea{min-height:80px;resize:vertical}
+.item-head,.item-row{display:grid;grid-template-columns:1fr 70px 110px 100px 40px;gap:8px;align-items:center}.item-head{font-size:11px;color:var(--muted);font-weight:800;margin-bottom:7px}
+.item-row{margin-bottom:8px}.item-total{text-align:right;font-weight:700}.remove{border:0;background:var(--light);color:var(--purple);width:34px;height:34px;border-radius:8px;font-weight:900}
+.add{width:100%;margin-top:8px;background:var(--light);color:var(--dark);border:1px dashed #c4b5fd;padding:11px;border-radius:9px;font-weight:700}
+.preview-wrap{position:sticky;top:100px}.preview-label{color:var(--muted);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+.receipt{background:var(--paper);border:1px solid #e9e3d8;box-shadow:0 25px 70px rgba(53,38,71,.12);padding:48px;max-width:760px;margin:auto}
+.receipt-top{display:flex;justify-content:space-between;gap:30px;padding-bottom:28px;border-bottom:2px solid var(--purple)}
+.receipt-brand{display:flex;gap:14px}.logo{width:48px;height:48px;border-radius:13px;font-size:20px}.company h2{margin:0;font-size:25px}.company p,.meta p{margin:4px 0;color:var(--muted);font-size:12px}
+.meta{text-align:right}.meta h1{margin:0 0 8px;font-size:25px;color:var(--dark)}
+.parties{display:grid;grid-template-columns:1fr 1fr;gap:30px;padding:26px 0;border-bottom:1px solid #e8e1d8}
+.party-title{color:var(--purple);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px}.party-name{font-weight:800;font-size:14px}.party-info{color:var(--muted);font-size:12px;line-height:1.6}
+.receipt-table{width:100%;border-collapse:collapse;margin-top:25px}.receipt-table th{text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase;padding:10px 8px;border-bottom:1px solid #ded7cd}.receipt-table th:not(:first-child),.receipt-table td:not(:first-child){text-align:right}.receipt-table td{padding:13px 8px;font-size:12px;border-bottom:1px solid #eee9e0}
+.totals{width:300px;margin-left:auto;margin-top:24px}.total{display:flex;justify-content:space-between;padding:7px 0;color:#655e6b;font-size:12px}.grand{margin-top:8px;padding-top:14px;border-top:2px solid var(--purple);color:var(--dark);font-size:18px;font-weight:850}
+.note{margin-top:24px;background:var(--light);border-radius:10px;padding:13px;color:#5b5270;font-size:11px}.footer{margin-top:45px;padding-top:20px;border-top:1px solid #e8e1d8;display:flex;justify-content:space-between;color:var(--muted);font-size:11px}
+@media(max-width:1100px){.workspace{grid-template-columns:1fr}.preview-wrap{position:static}}@media(max-width:650px){.page{padding:15px}.topbar{padding:0 15px}.sub{display:none}.grid{grid-template-columns:1fr}.full{grid-column:auto}.item-head{display:none}.item-row{grid-template-columns:1fr 65px}.item-row .item-price,.item-row .item-total{display:none}.remove{grid-column:2}.receipt{padding:25px 18px}.receipt-top{flex-direction:column}.meta{text-align:left}.parties{grid-template-columns:1fr}.totals{width:100%}.footer{flex-direction:column}}
+@media print{body{background:#fff}.topbar,.title,.form-panel,.preview-label{display:none!important}.page{padding:0}.workspace{display:block}.preview-wrap{position:static}.receipt{box-shadow:none;border:0;max-width:none;padding:15mm}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><div class="mark">F</div><div><div class="brand-name">Formix</div><div class="sub">Receipt Generator</div></div></div>
+  <div class="actions"><button class="btn" onclick="resetReceipt()">New Receipt</button><button class="btn primary" onclick="window.print()">Print / PDF</button></div>
+</header>
+
+<main class="page">
+<div class="title"><h1>Create Receipt</h1><p>Create a professional Formix receipt and export it as a PDF.</p></div>
+<div class="workspace">
+
+<section class="panel form-panel">
+<div class="section">
+<h3>Seller</h3>
+<div class="grid">
+<div class="field"><label>Company Name</label><input id="companyName" value="Formix" oninput="update()"></div>
+<div class="field"><label>Company Email</label><input id="companyEmail" value="hello@formix.com" oninput="update()"></div>
+<div class="field full"><label>Company Address</label><input id="companyAddress" value="Vilnius, Lithuania" oninput="update()"></div>
+<div class="field"><label>Registration / VAT No.</label><input id="companyVat" placeholder="Optional" oninput="update()"></div>
+<div class="field"><label>Phone</label><input id="companyPhone" placeholder="+370 ..." oninput="update()"></div>
+</div></div>
+
+<div class="section"><h3>Receipt</h3><div class="grid">
+<div class="field"><label>Receipt Number</label><input id="receiptNumber" oninput="update()"></div>
+<div class="field"><label>Date</label><input id="receiptDate" type="date" onchange="update()"></div>
+<div class="field"><label>Currency</label><select id="currency" onchange="update()"><option>EUR</option><option>USD</option><option>GBP</option></select></div>
+<div class="field"><label>Payment Method</label><select id="payment" onchange="update()"><option>Card</option><option>Cash</option><option>Bank Transfer</option><option>PayPal</option><option>Other</option></select></div>
+</div></div>
+
+<div class="section"><h3>Customer</h3><div class="grid">
+<div class="field"><label>Customer Name</label><input id="customerName" placeholder="Customer name" oninput="update()"></div>
+<div class="field"><label>Email</label><input id="customerEmail" type="email" placeholder="customer@example.com" oninput="update()"></div>
+<div class="field full"><label>Address</label><input id="customerAddress" placeholder="Customer address" oninput="update()"></div>
+<div class="field"><label>VAT Number</label><input id="customerVat" placeholder="Optional" oninput="update()"></div>
+</div></div>
+
+<div class="section"><h3>Items</h3>
+<div class="item-head"><span>Item</span><span>Qty</span><span>Unit Price</span><span>Total</span><span></span></div>
+<div id="items"></div>
+<button class="add" onclick="addItem()">+ Add Item</button>
+</div>
+
+<div class="section"><h3>Taxes & Discount</h3><div class="grid">
+<div class="field"><label>Discount</label><input id="discount" type="number" min="0" step=".01" value="0" oninput="update()"></div>
+<div class="field"><label>VAT (%)</label><input id="vat" type="number" min="0" step=".01" value="21" oninput="update()"></div>
+</div></div>
+
+<div class="section"><h3>Notes</h3><textarea id="notes" oninput="update()">Thank you for your business.</textarea></div>
+</section>
+
+<section class="preview-wrap">
+<div class="preview-label">Live Preview</div>
+<article class="receipt">
+<div class="receipt-top">
+<div class="receipt-brand"><div class="logo">F</div><div class="company"><h2 id="pCompany">Formix</h2><p id="pAddress"></p><p id="pEmail"></p></div></div>
+<div class="meta"><h1>RECEIPT</h1><p><strong>No.</strong> <span id="pNumber"></span></p><p><strong>Date:</strong> <span id="pDate"></span></p><p><strong>Payment:</strong> <span id="pPayment"></span></p></div>
+</div>
+
+<div class="parties">
+<div><div class="party-title">From</div><div class="party-name" id="pSeller"></div><div class="party-info" id="pSellerInfo"></div></div>
+<div><div class="party-title">Bill To</div><div class="party-name" id="pCustomer">Customer</div><div class="party-info" id="pCustomerInfo"></div></div>
+</div>
+
+<table class="receipt-table"><thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead><tbody id="pItems"></tbody></table>
+
+<div class="totals">
+<div class="total"><span>Subtotal</span><strong id="pSubtotal"></strong></div>
+<div class="total"><span>Discount</span><strong id="pDiscount"></strong></div>
+<div class="total"><span>VAT</span><strong id="pVat"></strong></div>
+<div class="total grand"><span>Total</span><strong id="pTotal"></strong></div>
+</div>
+
+<div class="note" id="pNotes"></div>
+<div class="footer"><div><strong>Payment Method</strong><br><span id="fPayment"></span></div><div style="text-align:right"><strong id="fCompany"></strong><br><span id="fContact"></span></div></div>
+</article>
+</section>
+</div>
+</main>
+
+<script>
+let counter=0;
+const $=id=>document.getElementById(id);
+const money=v=>new Intl.NumberFormat("en-US",{style:"currency",currency:$("currency").value}).format(v||0);
+const esc=v=>String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+const val=id=>$(id).value.trim();
+
+function number(){return "FMX-"+new Date().getFullYear()+"-"+Math.floor(10000+Math.random()*90000)}
+function dateText(v){return v?new Intl.DateTimeFormat("en-GB",{year:"numeric",month:"short",day:"numeric"}).format(new Date(v+"T00:00:00")):""}
+
+function addItem(name="",qty=1,price=100){
+ counter++;
+ const r=document.createElement("div");
+ r.className="item-row";r.dataset.id=counter;
+ r.innerHTML=`<input class="iname" placeholder="Service or product" value="${esc(name)}" oninput="update()">
+ <input class="iqty" type="number" min="0" step=".01" value="${qty}" oninput="update()">
+ <input class="iprice" type="number" min="0" step=".01" value="${price}" oninput="update()">
+ <div class="item-total"></div><button class="remove" onclick="this.parentElement.remove();update()">×</button>`;
+ $("items").appendChild(r);update();
+}
+
+function items(){
+ return [...document.querySelectorAll(".item-row")].map(r=>{
+  const qty=+r.querySelector(".iqty").value||0, price=+r.querySelector(".iprice").value||0;
+  return {name:r.querySelector(".iname").value.trim()||"Item",qty,price,total:qty*price,row:r};
+ });
+}
+
+function update(){
+ const its=items(), subtotal=its.reduce((s,x)=>s+x.total,0);
+ const discount=Math.max(0,+$("discount").value||0);
+ const taxable=Math.max(0,subtotal-discount);
+ const vat=taxable*((+$("vat").value||0)/100);
+ const total=taxable+vat;
+
+ $("pCompany").textContent=val("companyName")||"Formix";
+ $("pAddress").textContent=val("companyAddress");
+ $("pEmail").textContent=val("companyEmail");
+ $("pNumber").textContent=val("receiptNumber");
+ $("pDate").textContent=dateText($("receiptDate").value);
+ $("pPayment").textContent=$("payment").value;
+ $("pSeller").textContent=val("companyName")||"Formix";
+ $("pSellerInfo").innerHTML=[val("companyAddress"),val("companyEmail"),val("companyPhone"),val("companyVat")&&"VAT: "+esc(val("companyVat"))].filter(Boolean).map(esc).join("<br>");
+ $("pCustomer").textContent=val("customerName")||"Customer";
+ $("pCustomerInfo").innerHTML=[val("customerAddress"),val("customerEmail"),val("customerVat")&&"VAT: "+esc(val("customerVat"))].filter(Boolean).map(esc).join("<br>");
+
+ $("pItems").innerHTML=its.map(x=>`<tr><td>${esc(x.name)}</td><td>${x.qty}</td><td>${money(x.price)}</td><td>${money(x.total)}</td></tr>`).join("");
+ its.forEach(x=>x.row.querySelector(".item-total").textContent=money(x.total));
+
+ $("pSubtotal").textContent=money(subtotal);
+ $("pDiscount").textContent=money(discount);
+ $("pVat").textContent=money(vat);
+ $("pTotal").textContent=money(total);
+ $("pNotes").textContent=val("notes")||"Thank you for your business.";
+ $("fPayment").textContent=$("payment").value;
+ $("fCompany").textContent=val("companyName")||"Formix";
+ $("fContact").textContent=val("companyEmail")||val("companyPhone");
+}
+
+function resetReceipt(){
+ $("receiptNumber").value=number();
+ $("receiptDate").value=new Date().toISOString().slice(0,10);
+ $("customerName").value="";$("customerEmail").value="";$("customerAddress").value="";$("customerVat").value="";
+ $("discount").value=0;$("vat").value=21;$("notes").value="Thank you for your business.";
+ $("items").innerHTML="";counter=0;addItem("Service",1,100);update();
+}
+document.addEventListener("DOMContentLoaded",resetReceipt);
+</script>
+</body>
+</html>
